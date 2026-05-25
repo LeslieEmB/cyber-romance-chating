@@ -1,0 +1,68 @@
+@import "tailwindcss";
+@import "../styles/cyberpunk.css";
+
+:root {
+  color-scheme: dark;
+  --background: #05070c;
+  --panel: #0c111a;
+  --panel-strong: #111927;
+  --panel-glass: rgba(10, 14, 24, 0.86);
+  --border: #35e9ee;
+  --accent-pink: #fe4ed4;
+  --accent-green: #52f59d;
+  --accent-amber: #f8c75c;
+  --text: #e9f4f6;
+  --muted: #8294a5;
+  --danger: #fb5b76;
+  --font-ui: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI",
+    "Microsoft YaHei", "SF Pro Text", "Segoe UI", sans-serif;
+  --font-display: "DIN Condensed", "Avenir Next Condensed", "Avenir Next", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei UI", sans-serif;
+  --font-title: "Songti SC", "Hiragino Mincho ProN", "STSong", "PingFang SC", serif;
+  --font-art: "Hiragino Mincho ProN", "Songti SC", "STSong", "PingFang SC", serif;
+  --font-mono: "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    linear-gradient(105deg, rgba(53, 233, 238, 0.06), transparent 24%, transparent 73%, rgba(254, 78, 212, 0.045)),
+    linear-gradient(180deg, #04060b 0%, #070b12 46%, #080c14 100%);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-weight: 400;
+  font-feature-settings: "kern";
+  letter-spacing: 0;
+  text-rendering: geometricPrecision;
+  overflow-x: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent-green);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: rgba(254, 78, 212, 0.42);
+}
