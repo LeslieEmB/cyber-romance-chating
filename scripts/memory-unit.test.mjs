@@ -59,7 +59,10 @@ const { retrieveRelevantMemories } = loadTsModule(path.join(root, "src/lib/memor
 const { memoryTypeMeta } = loadTsModule(path.join(root, "src/lib/memory/meta.ts"));
 const { makeLocalCompanionReply } = loadTsModule(path.join(root, "src/lib/ai/localReply.ts"));
 const { buildChatPrompt } = loadTsModule(path.join(root, "src/lib/ai/prompt.ts"));
-const { humanizePersona } = loadTsModule(path.join(root, "src/lib/personaOptions.ts"));
+const { createAvatarConfig } = loadTsModule(path.join(root, "src/lib/avatar.ts"));
+const { backgroundOptions, genderOptions, humanizePersona, isCustomBackground } = loadTsModule(
+  path.join(root, "src/lib/personaOptions.ts")
+);
 
 const personaFixture = {
   name: "NOVA",
@@ -167,6 +170,36 @@ test("legacy cyber persona settings migrate to everyday conversation settings", 
   assert.equal(persona.tone, "幽默自然");
   assert.match(persona.speechStyle, /少用套话/);
   assert.doesNotMatch(persona.speechStyle, /赛博/);
+});
+
+test("custom living backgrounds stay distinct from preset choices", () => {
+  assert.ok(backgroundOptions.includes("独立书店店员"));
+  assert.equal(isCustomBackground("独立书店店员"), false);
+  assert.equal(isCustomBackground("独立游戏音乐人"), true);
+});
+
+test("scene atmosphere selection does not regenerate companion appearance", () => {
+  const rainAvatar = createAvatarConfig("NOVA", "androgynous", "霓虹雨巷");
+  const terminalAvatar = createAvatarConfig("NOVA", "androgynous", "蓝绿终端");
+
+  assert.deepEqual(terminalAvatar, rainAvatar);
+});
+
+test("freeform expression clearly means appearance customization", () => {
+  const customOption = genderOptions.find((option) => option.value === "custom");
+
+  assert.equal(customOption.label, "自由塑造");
+  assert.equal(customOption.hint, "只改外观");
+});
+
+test("brand title preserves readable glyphs while mosaic fragments animate the entrance", () => {
+  const titleSource = readFileSync(path.join(root, "src/components/brand/PixelSignalTitle.tsx"), "utf8");
+
+  assert.match(titleSource, /signal-character/);
+  assert.match(titleSource, /signal-mosaic/);
+  assert.match(titleSource, /mosaicBlocks/);
+  assert.doesNotMatch(titleSource, /pixelCharacters/);
+  assert.doesNotMatch(titleSource, /signal-pixel-form/);
 });
 
 test("chat prompt separates visual styling from natural dialogue", () => {

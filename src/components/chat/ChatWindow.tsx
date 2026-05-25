@@ -8,6 +8,7 @@ import { MessageBubble } from "@/components/chat/MessageBubble";
 import { memoryTypeMeta, normalizeMemoryType } from "@/lib/memory/meta";
 import { createClientId, nowIso } from "@/lib/runtime";
 import type { ChatMessage, Memory } from "@/lib/types";
+import { useAuthStore } from "@/stores/authStore";
 import { usePersonaStore } from "@/stores/personaStore";
 
 const quickPrompts = ["今天有点累", "讲讲你记得的我", "陪我安静一会儿", "夸夸我吧"];
@@ -33,6 +34,7 @@ export function ChatWindow() {
   const addMessage = usePersonaStore((state) => state.addMessage);
   const addMemory = usePersonaStore((state) => state.addMemory);
   const clearChat = usePersonaStore((state) => state.clearChat);
+  const viewer = useAuthStore((state) => state.viewer);
   const latestAssistantId = [...messages].reverse().find((message) => message.role === "assistant")?.id;
 
   useEffect(() => {
@@ -177,10 +179,18 @@ export function ChatWindow() {
         </div>
       </aside>
 
-      <div className="chat-panel">
+      <div className={`chat-panel ${viewer.mode === "guest" ? "has-guest-banner" : ""}`}>
+        {viewer.mode === "guest" ? (
+          <div className="guest-banner">
+            <strong>{viewer.nickname}</strong>
+            <span>访客体验中：聊天与人物设定不会长期保存，注册后可使用完整功能。</span>
+          </div>
+        ) : null}
         <header className="chat-header">
           <div>
-            <span className="eyebrow">PRIVATE CHANNEL / LIVE</span>
+            <span className="eyebrow">
+              {viewer.mode === "member" ? `PRIVATE CHANNEL / ${viewer.user.nickname}` : "PRIVATE CHANNEL / LIVE"}
+            </span>
             <h1>{persona.name}</h1>
           </div>
           <div className="channel-tools">

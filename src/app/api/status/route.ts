@@ -1,16 +1,14 @@
-import { NextResponse } from "next/server";
-import { getDeepSeekConfig, hasDeepSeekApiKey } from "@/lib/ai/deepseek";
+import { NextResponse, type NextRequest } from "next/server";
+import { getProviderStatus } from "@/lib/ai/providerConfig";
+import { authenticatedUser, authErrorResponse } from "@/lib/auth/sessionCookie";
 
 export const runtime = "nodejs";
 
-export function GET() {
-  const config = getDeepSeekConfig();
-
-  return NextResponse.json({
-    ok: true,
-    provider: "deepseek",
-    configured: hasDeepSeekApiKey(),
-    baseUrl: config.baseUrl,
-    model: config.model
-  });
+export async function GET(request: NextRequest) {
+  try {
+    await authenticatedUser(request);
+    return NextResponse.json({ ok: true, provider: "deepseek", ...(await getProviderStatus()) });
+  } catch (error) {
+    return authErrorResponse(error);
+  }
 }

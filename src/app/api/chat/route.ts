@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     let provider: "deepseek" | "local" | "local-fallback" = "local";
     let warning: string | undefined;
 
-    if (hasDeepSeekApiKey()) {
+    if (await hasDeepSeekApiKey()) {
       try {
         reply = await requestDeepSeekChat(promptMessages, settings.model);
         provider = "deepseek";
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       reply,
       memory: extractedMemory,
       provider,
-      model: getDeepSeekConfig(settings.model).model,
+      model: (await getDeepSeekConfig(settings.model)).model,
       retrievedMemoryIds: retrievedMemories.map((memory) => memory.id),
       warning
     });

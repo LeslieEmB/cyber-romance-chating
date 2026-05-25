@@ -4,7 +4,7 @@ export const genderOptions: Array<{ value: GenderExpression; label: string; hint
   { value: "feminine", label: "女性化", hint: "长发 / 柔和轮廓" },
   { value: "masculine", label: "男性化", hint: "短发 / 利落轮廓" },
   { value: "androgynous", label: "中性", hint: "轻盈 / 混合气质" },
-  { value: "custom", label: "自定义", hint: "保留手动参数" }
+  { value: "custom", label: "自由塑造", hint: "只改外观" }
 ];
 
 export const relationshipOptions: Array<{ value: RelationshipStyle; label: string }> = [
@@ -36,7 +36,24 @@ export const backgroundOptions = [
   "夜班便利店店员"
 ];
 
+export function isCustomBackground(background: string) {
+  return !backgroundOptions.includes(background);
+}
+
 export const visualVibeOptions = ["霓虹雨巷", "蓝绿终端", "粉色电波", "废土夜航", "银色诊所", "旧磁带梦境"];
+
+const visualVibeClasses: Record<string, string> = {
+  霓虹雨巷: "scene-neon-rain",
+  蓝绿终端: "scene-terminal",
+  粉色电波: "scene-radio-wave",
+  废土夜航: "scene-wasteland",
+  银色诊所: "scene-clinic",
+  旧磁带梦境: "scene-tape"
+};
+
+export function getVisualVibeClass(vibe: string) {
+  return visualVibeClasses[vibe] ?? visualVibeClasses["霓虹雨巷"];
+}
 
 export const boundaryOptions = ["不施压", "不假装真人", "尊重现实关系", "不记录敏感隐私", "不制造依赖", "避免过度暧昧"];
 

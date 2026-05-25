@@ -12,10 +12,9 @@ function hashSeed(seed: string) {
 
 export function createAvatarConfig(
   seed: string,
-  gender: GenderExpression,
-  vibe: string
+  gender: GenderExpression
 ): AvatarConfig {
-  const value = hashSeed(`${seed}-${gender}-${vibe}`);
+  const value = hashSeed(`${seed}-${gender}`);
   const hairShape =
     gender === "feminine"
       ? "long"

@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, Check, PencilLine, Sparkles } from "lucide-react";
+import { AppearanceControls } from "@/components/avatar/AppearanceControls";
 import { PixelAvatar } from "@/components/avatar/PixelAvatar";
 import { createAvatarConfig } from "@/lib/avatar";
 import { defaultPersona } from "@/lib/defaults";
@@ -11,6 +12,7 @@ import {
   backgroundOptions,
   boundaryOptions,
   genderOptions,
+  isCustomBackground,
   joinChoices,
   personalityOptions,
   relationshipOptions,
@@ -20,21 +22,21 @@ import {
   toneOptions,
   visualVibeOptions
 } from "@/lib/personaOptions";
-import type { GenderExpression, Persona } from "@/lib/types";
+import type { AvatarConfig, GenderExpression, Persona } from "@/lib/types";
+import { useAuthStore } from "@/stores/authStore";
 import { usePersonaStore } from "@/stores/personaStore";
 
 export function PersonaForm() {
   const router = useRouter();
   const completeOnboarding = usePersonaStore((state) => state.completeOnboarding);
+  const viewer = useAuthStore((state) => state.viewer);
+  const savePersona = useAuthStore((state) => state.savePersona);
   const [draft, setDraft] = useState<Persona>(defaultPersona);
+  const [customBackground, setCustomBackground] = useState("");
+  const [submitError, setSubmitError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const previewPersona = useMemo(
-    () => ({
-      ...draft,
-      avatar: createAvatarConfig(draft.name || "NOVA", draft.gender, draft.visualVibe)
-    }),
-    [draft]
-  );
+  const previewPersona = draft;
 
   function updateDraft(value: Partial<Persona>) {
     setDraft((current) => ({ ...current, ...value }));
@@ -44,7 +46,15 @@ export function PersonaForm() {
     setDraft((current) => ({
       ...current,
       gender,
-      avatar: createAvatarConfig(current.name || "NOVA", gender, current.visualVibe)
+      avatar: gender === "custom" ? current.avatar : createAvatarConfig(current.name || "NOVA", gender)
+    }));
+  }
+
+  function updateAvatar(value: Partial<AvatarConfig>) {
+    setDraft((current) => ({
+      ...current,
+      gender: "custom",
+      avatar: { ...current.avatar, ...value }
     }));
   }
 
@@ -74,16 +84,25 @@ export function PersonaForm() {
     });
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    completeOnboarding(previewPersona);
-    router.push("/chat");
+    setSaving(true);
+    setSubmitError("");
+
+    try {
+      await savePersona(previewPersona);
+      completeOnboarding(previewPersona);
+      router.push("/chat");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "暂时无法保存人物设定。");
+      setSaving(false);
+    }
   }
 
   return (
-    <main className="onboarding-screen scanline-layer">
+    <main className="onboarding-screen initialization-screen scanline-layer">
       <motion.section
-        className="onboarding-grid"
+        className="onboarding-grid initialization-grid"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -91,14 +110,26 @@ export function PersonaForm() {
         <div className="onboarding-copy">
           <span className="brand-chip">
             <Sparkles size={16} />
-            CYBER ROMANCE
+            {viewer.mode === "guest" ? "GUEST PREVIEW / TEMP" : "INITIALIZATION / 01"}
           </span>
-          <h1>赛博恋爱</h1>
-          <p>创建一个有温度的聊天对象，选好性格与相处方式，然后开始第一句对话。</p>
+          <div className="initialization-copy">
+            <span className="eyebrow">COMPANION SETUP</span>
+            <h1>定义初遇</h1>
+            <p>为这位刚刚来到你面前的人选择名字、气质和相处方式。外观属于界面，回应会尽量像真实的人。</p>
+          </div>
           <PixelAvatar persona={previewPersona} />
+          <div className="initialization-progress" aria-label="初始化流程">
+            <span className="is-finished">注册</span>
+            <span className="is-current">定义人物</span>
+            <span>开始聊天</span>
+          </div>
         </div>
 
         <form className="onboarding-form" onSubmit={handleSubmit}>
+          <header className="initializer-header">
+            <span className="eyebrow">PROFILE CALIBRATION</span>
+            <h2>初始化聊天对象</h2>
+          </header>
           <label className="field-stack">
             <span>姓名 / 代号</span>
             <input
@@ -123,6 +154,32 @@ export function PersonaForm() {
                 </button>
               ))}
             </div>
+            <AnimatePresence initial={false}>
+              {draft.gender === "custom" ? (
+                <motion.p
+                  className="gender-mode-note"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  这个模式只开放外观编辑，不会改动 TA 的对话身份。
+                </motion.p>
+              ) : null}
+            </AnimatePresence>
+            <AnimatePresence initial={false}>
+              {draft.gender === "custom" ? (
+                <motion.div
+                  className="freeform-appearance-reveal"
+                  initial={{ height: 0, opacity: 0, y: -5 }}
+                  animate={{ height: "auto", opacity: 1, y: 0 }}
+                  exit={{ height: 0, opacity: 0, y: -5 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                >
+                  <AppearanceControls avatar={draft.avatar} onChange={updateAvatar} note="只调整外观，不改变 TA 的对话身份。" />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </div>
 
           <div className="field-stack">
@@ -204,23 +261,49 @@ export function PersonaForm() {
                   {option}
                 </button>
               ))}
+              <button
+                className={`custom-background-toggle ${isCustomBackground(draft.background) ? "is-selected" : ""}`}
+                type="button"
+                onClick={() => updateDraft({ background: customBackground })}
+              >
+                <PencilLine size={15} />
+                自定义背景
+              </button>
             </div>
+            <AnimatePresence initial={false}>
+              {isCustomBackground(draft.background) ? (
+                <motion.label
+                  className="custom-background-field"
+                  initial={{ height: 0, opacity: 0, y: -5 }}
+                  animate={{ height: "auto", opacity: 1, y: 0 }}
+                  exit={{ height: 0, opacity: 0, y: -5 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                >
+                  <span>写下 TA 的现实生活背景</span>
+                  <input
+                    maxLength={24}
+                    onChange={(event) => {
+                      setCustomBackground(event.target.value);
+                      updateDraft({ background: event.target.value });
+                    }}
+                    placeholder="例如：独立游戏音乐人"
+                    required
+                    value={draft.background}
+                  />
+                </motion.label>
+              ) : null}
+            </AnimatePresence>
           </div>
 
           <div className="field-stack">
-            <span>视觉氛围</span>
+            <span>场景氛围</span>
             <div className="segmented-grid three-cols">
               {visualVibeOptions.map((option) => (
                 <button
                   key={option}
                   className={draft.visualVibe === option ? "is-selected" : ""}
                   type="button"
-                  onClick={() =>
-                    updateDraft({
-                      visualVibe: option,
-                      avatar: createAvatarConfig(draft.name || "NOVA", draft.gender, option)
-                    })
-                  }
+                  onClick={() => updateDraft({ visualVibe: option })}
                 >
                   {option}
                 </button>
@@ -245,10 +328,11 @@ export function PersonaForm() {
             </div>
           </div>
 
-          <button className="primary-action" type="submit">
-            接通信道
+          <button className="primary-action" disabled={saving} type="submit">
+            {saving ? "正在保存..." : "完成并开始聊天"}
             <ArrowRight size={18} />
           </button>
+          {submitError ? <p className="auth-error">{submitError}</p> : null}
         </form>
       </motion.section>
     </main>

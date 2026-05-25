@@ -33,10 +33,10 @@ body {
 }
 
 body {
+  position: relative;
   margin: 0;
   background:
-    linear-gradient(105deg, rgba(53, 233, 238, 0.06), transparent 24%, transparent 73%, rgba(254, 78, 212, 0.045)),
-    linear-gradient(180deg, #04060b 0%, #070b12 46%, #080c14 100%);
+    linear-gradient(180deg, #03070d 0%, #07121b 48%, #080e17 100%);
   color: var(--text);
   font-family: var(--font-ui);
   font-weight: 400;
@@ -44,6 +44,12 @@ body {
   letter-spacing: 0;
   text-rendering: geometricPrecision;
   overflow-x: hidden;
+}
+
+.application-stage {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
 }
 
 button,

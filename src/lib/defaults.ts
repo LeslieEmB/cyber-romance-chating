@@ -12,7 +12,7 @@ export const defaultPersona: Persona = {
   speechStyle: "短句、少用套话、偶尔调侃",
   background: "独立书店店员",
   tone: "温暖",
-  avatar: createAvatarConfig("NOVA", "androgynous", "霓虹雨巷")
+  avatar: createAvatarConfig("NOVA", "androgynous")
 };
 
 export const initialMessages: ChatMessage[] = [

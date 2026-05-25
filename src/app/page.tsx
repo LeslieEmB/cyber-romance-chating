@@ -1,5 +1,5 @@
-import { PersonaForm } from "@/components/onboarding/PersonaForm";
+import { AuthGateway } from "@/components/auth/AuthGateway";
 
 export default function HomePage() {
-  return <PersonaForm />;
+  return <AuthGateway />;
 }

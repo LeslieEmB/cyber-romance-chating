@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
+import { getVisualVibeClass } from "@/lib/personaOptions";
 import type { Persona } from "@/lib/types";
 
 type PixelAvatarProps = {
@@ -11,6 +12,7 @@ type PixelAvatarProps = {
 
 export function PixelAvatar({ persona, compact = false, mini = false }: PixelAvatarProps) {
   const avatar = persona.avatar;
+  const sceneClass = getVisualVibeClass(persona.visualVibe);
   const style = {
     "--eye": avatar.eyeColor,
     "--outfit": avatar.outfitColor,
@@ -47,6 +49,11 @@ export function PixelAvatar({ persona, compact = false, mini = false }: PixelAva
       style={style}
       aria-label={`${persona.name} 的像素头像`}
     >
+      <div className={`avatar-scene ${sceneClass}`} aria-hidden="true">
+        <span className="scene-layer primary" />
+        <span className="scene-layer secondary" />
+        <span className="scene-layer signal" />
+      </div>
       <div className={`pixel-avatar gender-${persona.gender} hair-${avatar.hairShape} mood-${avatar.mood}`}>
         {avatar.accessory === "halo" ? <span className="avatar-halo" /> : null}
         {avatar.accessory === "visor" ? <span className="avatar-visor" /> : null}

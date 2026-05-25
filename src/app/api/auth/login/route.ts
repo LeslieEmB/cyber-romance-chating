@@ -1,0 +1,18 @@
+import { NextResponse } from "next/server";
+import { authenticateUser, createSession } from "@/lib/auth/store";
+import { authErrorResponse, writeSessionCookie } from "@/lib/auth/sessionCookie";
+
+export const runtime = "nodejs";
+
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as { email?: string; password?: string };
+    const user = await authenticateUser(body.email ?? "", body.password ?? "");
+    const session = await createSession(user.id);
+    const response = NextResponse.json({ user });
+    writeSessionCookie(response, session);
+    return response;
+  } catch (error) {
+    return authErrorResponse(error);
+  }
+}

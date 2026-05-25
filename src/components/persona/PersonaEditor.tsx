@@ -1,17 +1,17 @@
 "use client";
 
-import { Save, SlidersHorizontal } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { PencilLine, Save, SlidersHorizontal } from "lucide-react";
+import { AppearanceControls } from "@/components/avatar/AppearanceControls";
 import { PixelAvatar } from "@/components/avatar/PixelAvatar";
 import { createAvatarConfig } from "@/lib/avatar";
 import {
-  accessoryOptions,
   backgroundOptions,
   boundaryOptions,
-  eyeOptions,
   genderOptions,
-  hairOptions,
+  isCustomBackground,
   joinChoices,
-  outfitOptions,
   personalityOptions,
   relationshipOptions,
   speechStyleOptions,
@@ -21,21 +21,43 @@ import {
   visualVibeOptions
 } from "@/lib/personaOptions";
 import type { AvatarConfig, GenderExpression } from "@/lib/types";
+import { useAuthStore } from "@/stores/authStore";
 import { usePersonaStore } from "@/stores/personaStore";
 
 export function PersonaEditor() {
   const persona = usePersonaStore((state) => state.persona);
   const updatePersona = usePersonaStore((state) => state.updatePersona);
-  const setAvatar = usePersonaStore((state) => state.setAvatar);
+  const viewer = useAuthStore((state) => state.viewer);
+  const savePersona = useAuthStore((state) => state.savePersona);
+  const memberInitialized = viewer.mode === "member" && viewer.user.hasOnboarded;
+  const [syncState, setSyncState] = useState<"saved" | "saving" | "error">("saved");
+  const [customBackground, setCustomBackground] = useState(
+    isCustomBackground(persona.background) ? persona.background : ""
+  );
+
+  useEffect(() => {
+    if (!memberInitialized) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSyncState("saving");
+      void savePersona(persona)
+        .then(() => setSyncState("saved"))
+        .catch(() => setSyncState("error"));
+    }, 320);
+
+    return () => window.clearTimeout(timer);
+  }, [memberInitialized, persona, savePersona]);
 
   function updateAvatar(value: Partial<AvatarConfig>) {
-    setAvatar({ ...persona.avatar, ...value });
+    updatePersona({ gender: "custom", avatar: { ...persona.avatar, ...value } });
   }
 
   function chooseGender(gender: GenderExpression) {
     updatePersona({
       gender,
-      avatar: createAvatarConfig(persona.name || "NOVA", gender, persona.visualVibe)
+      avatar: gender === "custom" ? persona.avatar : createAvatarConfig(persona.name || "NOVA", gender)
     });
   }
 
@@ -67,7 +89,7 @@ export function PersonaEditor() {
           </div>
           <span className="save-state">
             <Save size={16} />
-            已同步
+            {syncState === "saving" ? "保存中" : syncState === "error" ? "保存失败" : "已同步"}
           </span>
         </header>
 
@@ -81,19 +103,14 @@ export function PersonaEditor() {
           </label>
 
           <div className="field-stack">
-            <span>视觉氛围</span>
+            <span>场景氛围</span>
             <div className="segmented-grid three-cols">
               {visualVibeOptions.map((option) => (
                 <button
                   key={option}
                   className={persona.visualVibe === option ? "is-selected" : ""}
                   type="button"
-                  onClick={() =>
-                    updatePersona({
-                      visualVibe: option,
-                      avatar: createAvatarConfig(persona.name || "NOVA", persona.gender, option)
-                    })
-                  }
+                  onClick={() => updatePersona({ visualVibe: option })}
                 >
                   {option}
                 </button>
@@ -116,6 +133,19 @@ export function PersonaEditor() {
                 </button>
               ))}
             </div>
+            <AnimatePresence initial={false}>
+              {persona.gender === "custom" ? (
+                <motion.p
+                  className="gender-mode-note"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  当前处于自由塑造模式，只会影响外观，不会改写 TA 的说话身份。
+                </motion.p>
+              ) : null}
+            </AnimatePresence>
           </div>
 
           <div className="field-stack span-2">
@@ -147,7 +177,37 @@ export function PersonaEditor() {
                   {option}
                 </button>
               ))}
+              <button
+                className={`custom-background-toggle ${isCustomBackground(persona.background) ? "is-selected" : ""}`}
+                type="button"
+                onClick={() => updatePersona({ background: customBackground })}
+              >
+                <PencilLine size={15} />
+                自定义背景
+              </button>
             </div>
+            <AnimatePresence initial={false}>
+              {isCustomBackground(persona.background) ? (
+                <motion.label
+                  className="custom-background-field"
+                  initial={{ height: 0, opacity: 0, y: -5 }}
+                  animate={{ height: "auto", opacity: 1, y: 0 }}
+                  exit={{ height: 0, opacity: 0, y: -5 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                >
+                  <span>写下 TA 的现实生活背景</span>
+                  <input
+                    maxLength={24}
+                    onChange={(event) => {
+                      setCustomBackground(event.target.value);
+                      updatePersona({ background: event.target.value });
+                    }}
+                    placeholder="例如：独立游戏音乐人"
+                    value={persona.background}
+                  />
+                </motion.label>
+              ) : null}
+            </AnimatePresence>
           </div>
 
           <div className="field-stack">
@@ -221,68 +281,13 @@ export function PersonaEditor() {
         <div className="avatar-controls">
           <div className="panel-label">
             <SlidersHorizontal size={15} />
-            像素参数
+            自由塑造外观
           </div>
-
-          <label className="field-stack">
-            <span>发型</span>
-            <select
-              value={persona.avatar.hairShape}
-              onChange={(event) => updateAvatar({ hairShape: event.target.value as AvatarConfig["hairShape"] })}
-            >
-              {hairOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="field-stack">
-            <span>配饰</span>
-            <select
-              value={persona.avatar.accessory}
-              onChange={(event) => updateAvatar({ accessory: event.target.value as AvatarConfig["accessory"] })}
-            >
-              {accessoryOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="field-stack">
-            <span>眼睛</span>
-            <div className="swatch-row">
-              {eyeOptions.map((color) => (
-                <button
-                  key={color}
-                  className={persona.avatar.eyeColor === color ? "is-selected" : ""}
-                  style={{ background: color }}
-                  type="button"
-                  onClick={() => updateAvatar({ eyeColor: color })}
-                  title={color}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="field-stack">
-            <span>外套</span>
-            <div className="swatch-row">
-              {outfitOptions.map((color) => (
-                <button
-                  key={color}
-                  className={persona.avatar.outfitColor === color ? "is-selected" : ""}
-                  style={{ background: color }}
-                  type="button"
-                  onClick={() => updateAvatar({ outfitColor: color })}
-                  title={color}
-                />
-              ))}
-            </div>
-          </div>
+          <AppearanceControls
+            avatar={persona.avatar}
+            onChange={updateAvatar}
+            note={persona.gender === "custom" ? "当前为自由塑造模式。" : "修改任一外观参数将切换至自由塑造。"}
+          />
         </div>
       </aside>
     </section>

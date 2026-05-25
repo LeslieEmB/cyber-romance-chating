@@ -48,3 +48,16 @@ export type AppSettings = {
   localMemory: boolean;
   privacyMode: boolean;
 };
+
+export type PublicAuthUser = {
+  id: string;
+  email: string;
+  nickname: string;
+  hasOnboarded: boolean;
+  persona: Persona | null;
+};
+
+export type Viewer =
+  | { mode: "anonymous" }
+  | { mode: "guest"; id: string; nickname: string }
+  | { mode: "member"; user: PublicAuthUser };

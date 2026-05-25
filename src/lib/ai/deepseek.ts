@@ -1,3 +1,5 @@
+import { resolveProviderConfig, type ProviderConfig } from "@/lib/ai/providerConfig";
+
 export type ModelMessage = {
   role: "system" | "user" | "assistant";
   content: string;
@@ -20,25 +22,15 @@ export class DeepSeekConfigError extends Error {
   }
 }
 
-export function getDeepSeekConfig(modelOverride?: string) {
-  return {
-    apiKey: process.env.DEEPSEEK_API_KEY?.trim() ?? "",
-    baseUrl: (process.env.DEEPSEEK_BASE_URL?.trim() || "https://api.deepseek.com").replace(/\/$/, ""),
-    model: modelOverride?.trim() || process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat"
-  };
+export async function getDeepSeekConfig(modelOverride?: string) {
+  return resolveProviderConfig(modelOverride);
 }
 
-export function hasDeepSeekApiKey() {
-  return Boolean(getDeepSeekConfig().apiKey);
+export async function hasDeepSeekApiKey() {
+  return Boolean((await getDeepSeekConfig()).apiKey);
 }
 
-export async function requestDeepSeekChat(messages: ModelMessage[], modelOverride?: string) {
-  const config = getDeepSeekConfig(modelOverride);
-
-  if (!config.apiKey) {
-    throw new DeepSeekConfigError("DEEPSEEK_API_KEY is not configured.");
-  }
-
+async function postDeepSeekChat(messages: ModelMessage[], config: ProviderConfig, temperature: number) {
   const response = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
@@ -48,7 +40,7 @@ export async function requestDeepSeekChat(messages: ModelMessage[], modelOverrid
     body: JSON.stringify({
       model: config.model,
       messages,
-      temperature: 0.82,
+      temperature,
       stream: false
     })
   });
@@ -66,4 +58,31 @@ export async function requestDeepSeekChat(messages: ModelMessage[], modelOverrid
   }
 
   return content;
+}
+
+export async function requestDeepSeekChat(messages: ModelMessage[], modelOverride?: string) {
+  const config = await getDeepSeekConfig(modelOverride);
+
+  if (!config.apiKey) {
+    throw new DeepSeekConfigError("DEEPSEEK_API_KEY is not configured.");
+  }
+
+  return postDeepSeekChat(messages, config, 0.82);
+}
+
+export async function testDeepSeekConnection(config: ProviderConfig) {
+  if (!config.apiKey) {
+    throw new DeepSeekConfigError("DEEPSEEK_API_KEY is not configured.");
+  }
+
+  await postDeepSeekChat(
+    [
+      {
+        role: "user",
+        content: "请只回复 OK。"
+      }
+    ],
+    config,
+    0
+  );
 }

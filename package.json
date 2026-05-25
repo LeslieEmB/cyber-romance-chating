@@ -3,29 +3,37 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname 127.0.0.1",
     "build": "next build --webpack",
-    "start": "next start",
+    "start": "next start --hostname 127.0.0.1",
     "lint": "eslint .",
-    "test:memory": "node --test scripts/memory-unit.test.mjs"
+    "test:auth": "node --test scripts/auth-unit.test.mjs",
+    "test:memory": "node --test scripts/memory-unit.test.mjs",
+    "test:provider": "node --test scripts/provider-unit.test.mjs",
+    "test:status": "node --test scripts/status-route-unit.test.mjs",
+    "test:release": "node --test scripts/release-unit.test.mjs",
+    "test:chat": "node --test scripts/chat-route-unit.test.mjs"
   },
   "dependencies": {
-    "framer-motion": "latest",
-    "lucide-react": "latest",
-    "next": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "zustand": "latest"
+    "framer-motion": "12.40.0",
+    "lucide-react": "1.16.0",
+    "next": "16.2.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "zustand": "5.0.13"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "latest",
-    "@types/node": "latest",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "eslint": "latest",
-    "eslint-config-next": "latest",
-    "postcss": "latest",
-    "tailwindcss": "latest",
-    "typescript": "latest"
+    "@tailwindcss/postcss": "4.3.0",
+    "@types/node": "25.9.1",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.6",
+    "postcss": "8.5.15",
+    "tailwindcss": "4.3.0",
+    "typescript": "6.0.3"
+  },
+  "overrides": {
+    "postcss": "8.5.15"
   }
 }

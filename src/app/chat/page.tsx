@@ -1,10 +1,13 @@
 import { AppShell } from "@/components/layout/AppShell";
+import { AccessGate } from "@/components/auth/AccessGate";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 
 export default function ChatPage() {
   return (
-    <AppShell>
-      <ChatWindow />
-    </AppShell>
+    <AccessGate>
+      <AppShell>
+        <ChatWindow />
+      </AppShell>
+    </AccessGate>
   );
 }

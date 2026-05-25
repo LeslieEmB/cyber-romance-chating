@@ -1,17 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Download, RotateCcw, Server, Shield, Trash2 } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
+import { CheckCircle2, Download, Eye, EyeOff, KeyRound, RotateCcw, Server, Shield, Trash2 } from "lucide-react";
 import { usePersonaStore } from "@/stores/personaStore";
 
 type ApiStatus = {
   configured: boolean;
+  connected: boolean;
+  keyHint: string | null;
   baseUrl: string;
   model: string;
+  source: "file" | "environment" | "none";
+  error?: string;
 };
 
 export function SettingsPanel() {
   const [apiStatus, setApiStatus] = useState<ApiStatus | null>(null);
+  const [apiKey, setApiKey] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [connectionState, setConnectionState] = useState<"idle" | "testing" | "success" | "error">("idle");
+  const [connectionMessage, setConnectionMessage] = useState("");
   const persona = usePersonaStore((state) => state.persona);
   const memories = usePersonaStore((state) => state.memories);
   const messages = usePersonaStore((state) => state.messages);
@@ -52,6 +60,30 @@ export function SettingsPanel() {
     URL.revokeObjectURL(url);
   }
 
+  async function testAndSaveConnection(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setConnectionState("testing");
+    setConnectionMessage("");
+
+    const response = await fetch("/api/provider/config", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ apiKey, baseUrl: settings.baseUrl, model: settings.model })
+    });
+    const payload = (await response.json()) as ApiStatus;
+
+    if (!response.ok) {
+      setConnectionState("error");
+      setConnectionMessage(payload.error || "连接失败，请检查填写信息。");
+      return;
+    }
+
+    setApiStatus(payload);
+    setApiKey("");
+    setConnectionState("success");
+    setConnectionMessage("已成功连接，新的聊天请求会使用该模型。");
+  }
+
   return (
     <section className="workspace-grid settings-workspace">
       <div className="workspace-main">
@@ -67,10 +99,10 @@ export function SettingsPanel() {
         </header>
 
         <div className="settings-stack">
-          <section className="settings-section">
+          <form className="settings-section provider-editor" onSubmit={testAndSaveConnection}>
             <div>
               <h2>模型连接</h2>
-              <p>{settings.baseUrl}</p>
+              <p>配置只保存在本机服务中，页面不会回显完整密钥。</p>
             </div>
             <div className="editor-grid">
               <label className="field-stack">
@@ -81,8 +113,43 @@ export function SettingsPanel() {
                 <span>模型</span>
                 <input value={settings.model} onChange={(event) => updateSettings({ model: event.target.value })} />
               </label>
+              <label className="field-stack span-2">
+                <span>DeepSeek API Key</span>
+                <div className="secret-field">
+                  <KeyRound size={17} />
+                  <input
+                    autoComplete="off"
+                    onChange={(event) => setApiKey(event.target.value)}
+                    placeholder={apiStatus?.keyHint ? `已配置 ${apiStatus.keyHint}，输入新 Key 可替换` : "sk-..."}
+                    required
+                    type={showApiKey ? "text" : "password"}
+                    value={apiKey}
+                  />
+                  <button
+                    className="password-toggle"
+                    onClick={() => setShowApiKey((visible) => !visible)}
+                    title={showApiKey ? "隐藏 API Key" : "显示 API Key"}
+                    type="button"
+                  >
+                    {showApiKey ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
+              </label>
             </div>
-          </section>
+            <div className="provider-actions">
+              <button className="primary-action compact" disabled={connectionState === "testing"} type="submit">
+                <Server size={17} />
+                {connectionState === "testing" ? "连接测试中..." : "测试并保存"}
+              </button>
+              {connectionState === "success" ? (
+                <span className="provider-feedback is-success">
+                  <CheckCircle2 size={17} />
+                  {connectionMessage}
+                </span>
+              ) : null}
+              {connectionState === "error" ? <span className="provider-feedback is-error">{connectionMessage}</span> : null}
+            </div>
+          </form>
 
           <section className="settings-section">
             <div>
@@ -147,10 +214,11 @@ export function SettingsPanel() {
           <h2>{apiStatus?.configured ? "DeepSeek 已配置" : "本地后端模拟中"}</h2>
           <p>
             {apiStatus?.configured
-              ? `当前模型：${apiStatus.model}`
+              ? `当前模型：${apiStatus.model} / ${apiStatus.keyHint}`
               : "未检测到 DEEPSEEK_API_KEY，聊天接口会走本地后端模拟。"}
           </p>
           <p>{apiStatus?.baseUrl ?? settings.baseUrl}</p>
+          {apiStatus?.source === "file" ? <p className="provider-source">本机设置页配置</p> : null}
         </div>
       </aside>
     </section>
